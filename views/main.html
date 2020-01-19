@@ -10,17 +10,34 @@
 
 <body>
     <h1>File manager</h1>
- 
-    <form ref='uploadForm' id='uploadForm' action='/upload' method='post'
-        encType="multipart/form-data">
-        <input type="file" name="sampleFile" multiple/>
+
+    <input type="text" placeholder="Search" id="edtSearch" value="<%= search%>" autocomplete="off"> <button onclick="FilterData();">Cari</button>
+    <br>
+    <form ref='uploadForm' id='uploadForm' action='/upload' method='post' encType="multipart/form-data">
+        <input type="file" name="sampleFile" multiple />
         <input type='submit' value='Upload!' />
     </form>
 
     <hr>
     <% for(let i = 0;i < dataList.length;i++) {  %>
-    <li><a href="/<%=dataList[i]%>"><%=dataList[i]%></a> <button onclick="location.href='/delete/<%=dataList[i]%>'" style="margin-left: 30px;">delete</button></li>
+    <li><a href="/<%=dataList[i]%>"><%=dataList[i]%></a> <button onclick="location.href='/delete/<%=dataList[i]%>'"
+            style="margin-left: 30px;">delete</button></li>
     <% }%>
+
+    <script>
+        function FilterData() {
+            location.href = '/?search=' + document.getElementById('edtSearch').value;
+        }
+
+        document.getElementById("edtSearch").addEventListener("keyup", function (event) {
+            event.preventDefault();
+            if (event.keyCode === 13) {
+                FilterData();
+            }
+        });
+
+        document.getElementById('edtSearch').focus();;
+    </script>
 </body>
 
 </html>

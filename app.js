@@ -1,18 +1,13 @@
 const express = require('express')
-const app = express()
-var bodyParser = require('body-parser')
-const ejs = require('ejs');
-const fileUpload = require('express-fileupload');
+const bodyParser = require('body-parser')
+const ejs = require('ejs')
 const path = require('path')
-const fs = require('fs');
-
-
+const fs = require('fs')
+const formidable = require('formidable')
 const pathview = path.join(__dirname + '/views')
 
-const port = 80
-
-// [Express file upload]
-app.use(fileUpload());
+const app = express()
+const port = 3000
 
 // [EJS tempalte engine]
 app.use(express.static('views')) // static web router
@@ -27,16 +22,15 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 
 app.get('/', async (req, res) => {
-    // let search = req.query.search
-    // var PATTERN = new RegExp(search);
+    let search = req.query.search;
+    var PATTERN = new RegExp(search);
 
     try {
         const testFolder = './tmp/';
         fs.readdir(testFolder, (err, files) => {
-            console.log(files);
             // filter base name file
-            // dataList = files.filter(function (str) { return PATTERN.test(str); });
-            res.render(pathview + '/main.html', { dataList: files });
+            dataList = files.filter(function (str) { return PATTERN.test(str); });
+            res.render(pathview + '/main.html', { dataList: dataList, search: search });
         })
 
     } catch (error) {
@@ -55,27 +49,28 @@ app.get('/delete/:namefile', async (req, res) => {
         console.log(`File "${filename}" deleted!`);
         res.redirect('/')
     });
-
 })
+
 app.post('/upload', function (req, res) {
-    console.log(req.files.sampleFile.length);
+    var form = new formidable.IncomingForm();
+    form.uploadDir = "./tmp";
+    form.multiples = true;
+    form.parse(req, function (err, fields, files) {
 
-    if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).send('No files were uploaded.');
-    } else {
-        for (let index = 0; index < req.files.sampleFile.length; index++) {
-            // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-            let sampleFile = req.files.sampleFile[index];
-
-            // Use the mv() method to place the file somewhere on your server
-            sampleFile.mv('./tmp/' + sampleFile.name, function (err) {
-                if (err)
-                    return res.status(500).send(err);
-
-            });
+        ctfile = files.sampleFile.length
+        for (let index = 0; index < ctfile; index++) {
+            var tempFile = files.sampleFile[index].path // this temporary file
+            var destFile = __dirname + '/tmp/' + files.sampleFile[index].name
+            console.log(destFile);
+            // this procedure for move temporary to directory desctination
+            fs.rename(tempFile, destFile, (error) => {
+                if (error) {
+                    res.send('Failed')
+                }
+            })
         }
         res.redirect('/')
-    }
+    });
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
