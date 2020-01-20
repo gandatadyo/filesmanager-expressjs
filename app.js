@@ -53,14 +53,28 @@ app.get('/delete/:namefile', async (req, res) => {
 
 app.post('/upload', function (req, res) {
     var form = new formidable.IncomingForm();
-    form.uploadDir = "./tmp";
+    form.uploadDir = __dirname + "/tmp";
     form.multiples = true;
     form.parse(req, function (err, fields, files) {
+        console.log("count files :"+files.sampleFile.length);
 
-        ctfile = files.sampleFile.length
-        for (let index = 0; index < ctfile; index++) {
-            var tempFile = files.sampleFile[index].path // this temporary file
-            var destFile = __dirname + '/tmp/' + files.sampleFile[index].name
+        if (files.sampleFile.length) {
+            // if multiple file
+            for (let index = 0; index < files.sampleFile.length; index++) {
+                var tempFile = files.sampleFile[index].path // this temporary file
+                var destFile = __dirname + '/tmp/' + files.sampleFile[index].name
+                console.log(destFile);
+                // this procedure for move temporary to directory desctination
+                fs.rename(tempFile, destFile, (error) => {
+                    if (error) {
+                        res.send('Failed')
+                    }
+                })
+            }
+        } else {
+            // if single file
+            var tempFile = files.sampleFile.path // this temporary file
+            var destFile = __dirname + '/tmp/' + files.sampleFile.name
             console.log(destFile);
             // this procedure for move temporary to directory desctination
             fs.rename(tempFile, destFile, (error) => {
@@ -69,6 +83,7 @@ app.post('/upload', function (req, res) {
                 }
             })
         }
+
         res.redirect('/')
     });
 });
