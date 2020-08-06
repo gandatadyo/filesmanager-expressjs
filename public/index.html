@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+</head>
+
+<body>
+
+    <h1>File manager v2</h1>
+
+    <input type="text" placeholder="Search" id="edtSearch" value="" autocomplete="off">
+    <button id="btnSearch">Cari</button>
+    <br>
+    <div>
+        <input type="file" id="inputFile" multiple />
+        <button id="btnUpload">Upload</button>
+    </div>
+
+    <script>
+        document.getElementById('btnSearch').onclick = function () {
+            FilterData();
+        }
+        document.getElementById('btnUpload').onclick = function () {
+            UploadData();
+        }
+
+        function FilterData() {
+            const data = {
+                search: document.getElementById('edtSearch').value
+            };
+
+            fetch('/getdata', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data);
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function UploadData() {
+            const formData = new FormData();
+            const fileField = document.getElementById('inputFile');
+
+            formData.append('inputFile', fileField.files[0]);
+
+            fetch('/uploaddata', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Success:', result);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+
+</body>
+
+</html>
