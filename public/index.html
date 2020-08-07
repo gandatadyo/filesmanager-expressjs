@@ -18,18 +18,35 @@
         <input type="file" id="inputFile" multiple />
         <button id="btnUpload">Upload</button>
     </div>
+    <div style="margin-top: 20px;">
+        <button onclick="ChangePath('')">Home</button>
+        <hr>
+        <table>
+            <tbody id="main_data">
+
+            </tbody>
+        </table>
+    </div>
 
     <script>
-        document.getElementById('btnSearch').onclick = function () {
-            FilterData();
-        }
-        document.getElementById('btnUpload').onclick = function () {
-            UploadData();
-        }
+        document.getElementById('btnSearch').onclick = function () { FilterData(); }
+        document.getElementById('btnUpload').onclick = function () { UploadData(); }
 
+        document.getElementById('edtSearch').addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                FilterData();
+            }
+        });
+
+        FilterData();
         function FilterData() {
+            let params = (new URL(document.location)).searchParams;
+            let subfolder = params.get('folder');
+            if (!subfolder) subfolder = ''
             const data = {
-                search: document.getElementById('edtSearch').value
+                search: document.getElementById('edtSearch').value,
+                subfolder: subfolder
             };
 
             fetch('/getdata', {
@@ -41,7 +58,18 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    alert(data);
+                    let main_data = document.getElementById('main_data');
+                    main_data.innerHTML = '';
+                    for (let i = 0; i < data.length; i++) {
+                        let item = document.createElement('tr');
+                        if (data[i].type == 'folder') {
+                            item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('${data[i].name}');">${data[i].name}</a> </td><td></td>`
+                        } else if (data[i].type == 'file') {
+                            item.innerHTML = `<td><a href="javascript:void(0);">${data[i].name}</a></td> <td><button onclick="DeleteData('${data[i].name}');">Delete</button></td>`
+                        }
+                        main_data.appendChild(item);
+
+                    }
                     console.log('Success:', data);
                 })
                 .catch((error) => {
@@ -50,22 +78,56 @@
         }
 
         function UploadData() {
-            const formData = new FormData();
-            const fileField = document.getElementById('inputFile');
+            if (document.getElementById("inputFile").files.length == 0) {
+                alert('No File');
+            } else {
+                const formData = new FormData();
+                const fileField = document.getElementById('inputFile');
 
-            formData.append('inputFile', fileField.files[0]);
+                for (let i = 0; i < fileField.files.length; i++) {
+                    formData.append('inputFile', fileField.files[i]);
+                }
+                fetch('/uploaddata', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        document.getElementById('inputFile').value = '';
+                        FilterData();
+                        console.log('Success:', result);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+        }
 
-            fetch('/uploaddata', {
+        function DeleteData(namefile) {
+            fetch('/deletedata', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ namefile: namefile }),
             })
                 .then(response => response.json())
-                .then(result => {
-                    console.log('Success:', result);
+                .then(data => {
+                    FilterData();
+                    console.log('Success:', data);
                 })
-                .catch(error => {
+                .catch((error) => {
                     console.error('Error:', error);
                 });
+        }
+
+        function ChangePath(folder) {
+            if (folder != '') {
+                history.pushState(null, null, '?folder=' + folder);
+                location.reload();
+            } else {
+                location.href = '/';
+            }
         }
     </script>
 
