@@ -16,7 +16,8 @@ const name_folder = 'temp'
 const pathfile = __dirname + "/" + name_folder;
 const testFolder = `./${name_folder}/`;
 app.use(express.static('public'))
-app.use(express.static('name_folder'))
+app.use(express.static('temp'))
+// app.use(express.static('name_folder'))
 
 app.post('/getdata', async (req, res) => {
     let search = req.body.search;
@@ -24,13 +25,16 @@ app.post('/getdata', async (req, res) => {
     let PATTERN = new RegExp(search);
     try {
         // check folder storage, create if not found
-        testFoldertemp = testFolder
-        if (subfolder != '') {
+        console.log(subfolder);
+        // testFoldertemp = testFolder + subfolder
+        if (subfolder == '/') {
+            testFoldertemp = testFolder
+        } else {
             testFoldertemp = testFolder + subfolder + '/'
         }
+        console.log(testFoldertemp);
         if (!fs.existsSync(testFoldertemp)) fs.mkdirSync(testFoldertemp)
 
-        console.log(testFoldertemp);
         dataset = []
         fs.readdir(testFoldertemp, (err, files) => {
             dataList = files.filter(function (str) { return PATTERN.test(str); });
@@ -43,7 +47,8 @@ app.post('/getdata', async (req, res) => {
                     dataset.push({ name: dataList[i], type: 'folder' })
                 }
             }
-            res.send(dataset)
+
+            res.send({ dataset: dataset, urlpath: subfolder })
         })
     } catch (error) {
         console.log(error);

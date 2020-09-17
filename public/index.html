@@ -29,6 +29,7 @@
     </div>
 
     <script>
+        let urlpath = '';
         document.getElementById('btnSearch').onclick = function () { FilterData(); }
         document.getElementById('btnUpload').onclick = function () { UploadData(); }
 
@@ -43,7 +44,6 @@
         function FilterData() {
             let params = (new URL(document.location)).searchParams;
             let subfolder = params.get('folder');
-            if (!subfolder) subfolder = ''
             const data = {
                 search: document.getElementById('edtSearch').value,
                 subfolder: subfolder
@@ -60,12 +60,12 @@
                 .then(data => {
                     let main_data = document.getElementById('main_data');
                     main_data.innerHTML = '';
-                    for (let i = 0; i < data.length; i++) {
+                    for (let i = 0; i < data.dataset.length; i++) {
                         let item = document.createElement('tr');
-                        if (data[i].type == 'folder') {
-                            item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('${data[i].name}');">${data[i].name}</a> </td><td></td>`
-                        } else if (data[i].type == 'file') {
-                            item.innerHTML = `<td><a href="javascript:void(0);">${data[i].name}</a></td> <td><button onclick="DeleteData('${data[i].name}');">Delete</button></td>`
+                        if (data.dataset[i].type == 'folder') {
+                            item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('/${data.dataset[i].name}');">${data.dataset[i].name}</a> </td><td></td>`
+                        } else if (data.dataset[i].type == 'file') {
+                            item.innerHTML = `<td><a href="${data.urlpath}/${data.dataset[i].name}">${data.urlpath}/${data.dataset[i].name}</a></td><td><button onclick="DeleteData('${data.urlpath}/${data.dataset[i].name}');">Delete</button></td>`
                         }
                         main_data.appendChild(item);
 
@@ -121,13 +121,16 @@
                 });
         }
 
-        function ChangePath(folder) {
-            if (folder != '') {
-                history.pushState(null, null, '?folder=' + folder);
-                location.reload();
-            } else {
-                location.href = '/';
+        function ChangePath(spath) {
+            if (spath == '') urlpath = '/'
+            else {
+                if (urlpath == '/') urlpath = spath
+                else urlpath = urlpath + spath;
             }
+
+            history.pushState(null, null, '?folder=' + urlpath);
+            FilterData();
+            // location.reload();
         }
     </script>
 
