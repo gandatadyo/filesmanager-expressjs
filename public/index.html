@@ -9,17 +9,18 @@
 
 <body>
 
-    <h1>File manager v2</h1>
+    <h1>File manager v3</h1>
 
-    <input type="text" placeholder="Search" id="edtSearch" value="" autocomplete="off">
-    <button id="btnSearch">Cari</button>
+    <!-- <input type="text" placeholder="Search" id="edtSearch" value="" autocomplete="off">
+    <button id="btnSearch">Cari</button> -->
     <br>
     <div>
-        <input type="file" id="inputFile" multiple />
-        <button id="btnUpload">Upload</button>
+        <input type="file" id="edtInputImage" />
+        <button onclick="uploadImage();">Upload</button>
     </div>
     <div style="margin-top: 20px;">
-        <button onclick="ChangePath('')">Home</button>
+        <!-- <button onclick="ChangePath('')">Home</button> -->
+        <button onclick="getData();">Reload</button>
         <hr>
         <table>
             <tbody id="main_data">
@@ -29,32 +30,37 @@
     </div>
 
     <script>
-        let urlpath = '';
-        document.getElementById('btnSearch').onclick = function () { FilterData(); }
-        document.getElementById('btnUpload').onclick = function () { UploadData(); }
 
-        document.getElementById('edtSearch').addEventListener("keyup", function (event) {
-            if (event.keyCode === 13) {
-                event.preventDefault();
-                FilterData();
-            }
-        });
+        function uploadImage() {
+            let input = document.querySelector('#edtInputImage');
+            let dataImg = new FormData()
+            dataImg.append('myfile', input.files[0])
 
-        FilterData();
-        function FilterData() {
-            let params = (new URL(document.location)).searchParams;
-            let subfolder = params.get('folder');
-            const data = {
-                search: document.getElementById('edtSearch').value,
-                subfolder: subfolder
-            };
+            fetch('/upload', {
+                method: 'POST',
+                body: dataImg // This is your file object
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector('#edtInputImage').va
+                    alert(JSON.stringify(data));
+                    if (data.status == 'true') {
+                        location.reload();
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
 
+        getData();
+        function getData() {
             fetch('/getdata', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ search: '' }),
             })
                 .then(response => response.json())
                 .then(data => {
@@ -63,9 +69,11 @@
                     for (let i = 0; i < data.dataset.length; i++) {
                         let item = document.createElement('tr');
                         if (data.dataset[i].type == 'folder') {
-                            item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('/${data.dataset[i].name}');">${data.dataset[i].name}</a> </td><td></td>`
+                            // item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('/${data.dataset[i].name}');">${data.dataset[i].name}</a> </td><td></td>`
                         } else if (data.dataset[i].type == 'file') {
-                            item.innerHTML = `<td><a href="${data.urlpath}/${data.dataset[i].name}">${data.urlpath}/${data.dataset[i].name}</a></td><td><button onclick="DeleteData('${data.urlpath}/${data.dataset[i].name}');">Delete</button></td>`
+                            // item.innerHTML = `<td><a href="${data.urlpath}/${data.dataset[i].name}">${data.urlpath}/${data.dataset[i].name}</a></td><td><button onclick="DeleteData('${data.urlpath}/${data.dataset[i].name}');">Delete</button></td>`
+                            item.innerHTML = `<td><a href="/${data.dataset[i].name}">${data.dataset[i].name}</a></td><td><button onclick="DeleteData('${data.dataset[i].name}');">Delete</button></td>`
+
                         }
                         main_data.appendChild(item);
 
@@ -77,61 +85,138 @@
                 });
         }
 
-        function UploadData() {
-            if (document.getElementById("inputFile").files.length == 0) {
-                alert('No File');
-            } else {
-                const formData = new FormData();
-                const fileField = document.getElementById('inputFile');
-
-                for (let i = 0; i < fileField.files.length; i++) {
-                    formData.append('inputFile', fileField.files[i]);
-                }
-                fetch('/uploaddata', {
+        function DeleteData(namefile) {
+            var r = window.confirm("Hapus File Ini ?");
+            if (r) {
+                fetch('/deletedata', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ namefile: namefile }),
                 })
                     .then(response => response.json())
-                    .then(result => {
-                        document.getElementById('inputFile').value = '';
-                        FilterData();
-                        console.log('Success:', result);
+                    .then(data => {
+                        window.location.reload()
                     })
-                    .catch(error => {
+                    .catch((error) => {
                         console.error('Error:', error);
                     });
             }
         }
 
-        function DeleteData(namefile) {
-            fetch('/deletedata', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ namefile: namefile }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    FilterData();
-                    console.log('Success:', data);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-        }
 
-        function ChangePath(spath) {
-            if (spath == '') urlpath = '/'
-            else {
-                if (urlpath == '/') urlpath = spath
-                else urlpath = urlpath + spath;
-            }
 
-            history.pushState(null, null, '?folder=' + urlpath);
-            FilterData();
-            // location.reload();
-        }
+
+
+
+
+
+
+
+        // let urlpath = '';
+        // document.getElementById('btnSearch').onclick = function () { FilterData(); }
+        // document.getElementById('btnUpload').onclick = function () { UploadData(); }
+
+        // document.getElementById('edtSearch').addEventListener("keyup", function (event) {
+        //     if (event.keyCode === 13) {
+        //         event.preventDefault();
+        //         FilterData();
+        //     }
+        // });
+
+        // FilterData();
+        // function FilterData() {
+        //     let params = (new URL(document.location)).searchParams;
+        //     let subfolder = params.get('folder');
+        //     const data = {
+        //         search: document.getElementById('edtSearch').value,
+        //         subfolder: subfolder
+        //     };
+
+        //     fetch('/getdata', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify(data),
+        //     })
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             let main_data = document.getElementById('main_data');
+        //             main_data.innerHTML = '';
+        //             for (let i = 0; i < data.dataset.length; i++) {
+        //                 let item = document.createElement('tr');
+        //                 if (data.dataset[i].type == 'folder') {
+        //                     item.innerHTML = `<td><a href="javascript:void(0);" onclick="ChangePath('/${data.dataset[i].name}');">${data.dataset[i].name}</a> </td><td></td>`
+        //                 } else if (data.dataset[i].type == 'file') {
+        //                     item.innerHTML = `<td><a href="${data.urlpath}/${data.dataset[i].name}">${data.urlpath}/${data.dataset[i].name}</a></td><td><button onclick="DeleteData('${data.urlpath}/${data.dataset[i].name}');">Delete</button></td>`
+        //                 }
+        //                 main_data.appendChild(item);
+
+        //             }
+        //             console.log('Success:', data);
+        //         })
+        //         .catch((error) => {
+        //             console.error('Error:', error);
+        //         });
+        // }
+
+        // function UploadData() {
+        //     if (document.getElementById("inputFile").files.length == 0) {
+        //         alert('No File');
+        //     } else {
+        //         const formData = new FormData();
+        //         const fileField = document.getElementById('inputFile');
+
+        //         for (let i = 0; i < fileField.files.length; i++) {
+        //             formData.append('inputFile', fileField.files[i]);
+        //         }
+        //         fetch('/uploaddata', {
+        //             method: 'POST',
+        //             body: formData
+        //         })
+        //             .then(response => response.json())
+        //             .then(result => {
+        //                 document.getElementById('inputFile').value = '';
+        //                 FilterData();
+        //                 console.log('Success:', result);
+        //             })
+        //             .catch(error => {
+        //                 console.error('Error:', error);
+        //             });
+        //     }
+        // }
+
+        // function DeleteData(namefile) {
+        //     fetch('/deletedata', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify({ namefile: namefile }),
+        //     })
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             FilterData();
+        //             console.log('Success:', data);
+        //         })
+        //         .catch((error) => {
+        //             console.error('Error:', error);
+        //         });
+        // }
+
+        // function ChangePath(spath) {
+        //     if (spath == '') urlpath = '/'
+        //     else {
+        //         if (urlpath == '/') urlpath = spath
+        //         else urlpath = urlpath + spath;
+        //     }
+
+        //     history.pushState(null, null, '?folder=' + urlpath);
+        //     FilterData();
+        //     // location.reload();
+        // }
     </script>
 
 </body>

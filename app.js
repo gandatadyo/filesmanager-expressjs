@@ -1,8 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const fs = require('fs')
-var multer = require('multer')
-var upload = multer({ dest: 'temp/' })
 
 const app = express()
 const port = 3000
@@ -10,36 +8,34 @@ const port = 3000
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-
-
-const name_folder = 'temp'
-const pathfile = __dirname + "/" + name_folder;
-const testFolder = `./${name_folder}/`;
 app.use(express.static('public'))
-app.use(express.static('temp'))
-// app.use(express.static('name_folder'))
+const urlpath = "C:/Users/LENOVO/Desktop/initestupload/"//__dirname + `/inifileupload/`
+app.use(express.static(urlpath))
+
+
+const multer = require('multer')
+const upload = multer({ dest: urlpath })
+app.post('/upload', upload.single('myfile'), async function (req, res, next) {
+    fs.rename(urlpath + req.file.filename, urlpath + req.file.originalname, function (err) {
+        if (err) console.log('ERROR: ' + err);
+        if (!err) {
+            res.send({ status: 'true', message: 'berhasil mengupload gambar' })
+        } else {
+            res.send({ status: 'false', message: 'gagal mengupload gambar' })
+        }
+    });
+})
+
 
 app.post('/getdata', async (req, res) => {
     let search = req.body.search;
-    let subfolder = req.body.subfolder;
     let PATTERN = new RegExp(search);
     try {
-        // check folder storage, create if not found
-        console.log(subfolder);
-        // testFoldertemp = testFolder + subfolder
-        if (subfolder == '/') {
-            testFoldertemp = testFolder
-        } else {
-            testFoldertemp = testFolder + subfolder + '/'
-        }
-        console.log(testFoldertemp);
-        if (!fs.existsSync(testFoldertemp)) fs.mkdirSync(testFoldertemp)
-
         dataset = []
-        fs.readdir(testFoldertemp, (err, files) => {
+        fs.readdir(urlpath, (err, files) => {
             dataList = files.filter(function (str) { return PATTERN.test(str); });
             for (let i = 0; i < dataList.length; i++) {
-                let stats = fs.statSync(testFoldertemp + dataList[i]);
+                let stats = fs.statSync(urlpath + dataList[i]);
                 if (stats.isFile()) {
                     dataset.push({ name: dataList[i], type: 'file' })
                 }
@@ -48,41 +44,25 @@ app.post('/getdata', async (req, res) => {
                 }
             }
 
-            res.send({ dataset: dataset, urlpath: subfolder })
+            res.send({ dataset: dataset, urlpath: urlpath })
         })
     } catch (error) {
         console.log(error);
     }
 })
 
-app.post('/uploaddata', upload.array('inputFile', 12), function (req, res, next) {
-    let dataobj = req.files
-    console.log(dataobj);
-    for (let i = 0; i < dataobj.length; i++) {
-        let tempFile = dataobj[i].path
-        let destFile = pathfile + '/' + dataobj[i].originalname
-        fs.rename(tempFile, destFile, (error) => {
-            if (error) {
-                res.send('Failed')
-            }
-        })
-    }
-    res.send('true')
-})
 
 app.post('/deletedata', async (req, res) => {
     let namefile = req.body.namefile
 
-    filepath = testFolder + namefile
-    if (!fs.existsSync(testFolder)) {
-        fs.mkdirSync(testFolder);
-    } else {
-        fs.unlink(filepath, function (err) {
-            if (err) throw err;
-            console.log(`File "${namefile}" deleted!`);
-            res.send('true')
-        });
-    }
+    filepath = urlpath + namefile
+    fs.unlink(filepath, function (err) {
+        if (err) throw err;
+        console.log(`File "${namefile}" deleted!`);
+        res.send({ status: 'File berhasil dihapus' })
+    });
 })
+
+
 
 app.listen(port, () => console.log(`Example app listening on port http://localhost:${port}`))
